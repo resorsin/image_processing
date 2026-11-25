@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Лабораторная работа №2. Часть Б.
-Обработка изображений в иерархической файловой системе.
-Вариант 30: 1) Box-фильтр (усреднение), 2) Цветокоррекция по шаблону.
-"""
+
 import os
 from datetime import datetime
 from PIL import Image, ImageFilter, ImageStat
@@ -14,7 +9,6 @@ LOG_FILE = os.path.join("Lab2_Media", "logs", "history.txt")
 
 
 def log_write(file_name, filter_name, status):
-    """Дописывает строку в журнал в режиме 'a' (append) - история не стирается."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     line = f"[{now}] Файл: {file_name} | Фильтр: {filter_name} | Статус: {status}\n"
     with open(LOG_FILE, "a", encoding="UTF-8") as f:
@@ -22,24 +16,21 @@ def log_write(file_name, filter_name, status):
 
 
 def box_filter(img, size):
-    """Box-фильтр: усреднение пикселей в квадратном окне size x size (все веса равны)."""
     radius = size // 2
     return img.filter(ImageFilter.BoxBlur(radius))
 
 
 def color_correction(img, template):
-    """Цветокоррекция по шаблону: перенос среднего и разброса по каждому каналу R, G, B."""
     img = img.convert("RGB")
     template = template.convert("RGB")
-    st_img = ImageStat.Stat(img)      # статистика исходного изображения
-    st_tpl = ImageStat.Stat(template)  # статистика шаблона (эталона)
+    st_img = ImageStat.Stat(img)      
+    st_tpl = ImageStat.Stat(template)  
 
     channels = img.split()
     corrected = []
     for ch, m_i, s_i, m_t, s_t in zip(
         channels, st_img.mean, st_img.stddev, st_tpl.mean, st_tpl.stddev
     ):
-        # если разброс почти нулевой - коэффициент масштаба не применяем (защита от деления на 0)
         ratio = (s_t / s_i) if s_i > 1e-3 else 1.0
         corrected.append(
             ch.point(lambda v, m_i=m_i, ratio=ratio, m_t=m_t:
@@ -49,14 +40,12 @@ def color_correction(img, template):
 
 
 def main():
-    # --- 1. Потоковый ввод: спрашиваем имя файла ---
     file_name = input("Введите имя файла для обработки (image1.jpg или image2.png): ").strip()
     file_path = os.path.join(INPUT_DIR, file_name)
 
-    # --- 2. Поиск файла и 3. обработка ошибок прав доступа ---
     try:
         img = Image.open(file_path)
-        img.load()  # принудительно читаем данные (PIL читает лениво)
+        img.load() 
     except FileNotFoundError:
         print("Ошибка: Файл не найден")
         log_write(file_name, "открытие файла", "Файл не найден")
@@ -66,12 +55,11 @@ def main():
         log_write(file_name, "открытие файла", "Ошибка доступа")
         return
 
-    original = img.convert("RGB")  # неизменяемый слепок исходника (в ОЗУ)
-    current = original.copy()      # рабочая копия, к ней применяются фильтры
+    original = img.convert("RGB")  
+    current = original.copy()     
     print(f"Файл {file_name} успешно открыт.")
     log_write(file_name, "открытие файла", "Успешно")
 
-    # --- Меню: фильтры применяются только по выбору пользователя ---
     while True:
         print("\n===== МЕНЮ =====")
         print("1 - Box-фильтр (усреднение)")
@@ -111,7 +99,7 @@ def main():
                 log_write(file_name, "Цветокоррекция по шаблону", "Ошибка доступа")
 
         elif choice == "3":
-            current = original.copy()  # откат: берем сохраненный слепок из ОЗУ
+            current = original.copy()  
             print("Изменения отменены, показан исходник.")
             log_write(file_name, "Отмена изменений", "Успешно")
 
